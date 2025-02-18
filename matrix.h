@@ -8,6 +8,8 @@ class Matrix {
 public:
     Matrix();
     Matrix(size_t row, size_t col);
+    template<typename Type>
+    Matrix(Type* ptr, size_t row, size_t col);
     Matrix(const Matrix &target);
     ~Matrix();
 
@@ -45,10 +47,10 @@ public:
     Matrix relu() const;
 
     Matrix T() const;
-    double *accessData() {return data.get();}
+    double *accessData() {return data;}
     size_t getRow() const {return row;}
     size_t getCol() const {return col;}
-    double *getData() const {return data.get();}
+    double *getData() const {return data;}
 
     void fillwith(size_t row, size_t col, double num);
     void zeros(size_t row, size_t col);
@@ -57,7 +59,7 @@ public:
 public:
     size_t row;
     size_t col;
-    std::shared_ptr<double> data;
+    double *data;
 };
 
 #endif

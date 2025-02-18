@@ -7,7 +7,7 @@ Layer::~Layer() {}
 Matrix Layer::forward(const Matrix &input)
 {
     this->input = input;
-    return this->forward(input);
+    return input;
 }
 
 std::pair<Matrix, std::vector<Matrix>> Layer::backward(Matrix &gradient)
