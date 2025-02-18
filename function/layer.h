@@ -1,3 +1,5 @@
+// base class for layers (linear, relu, etc)
+// forward, backward, apply_gradient
 #include "matrix.h"
 #include <vector>
 

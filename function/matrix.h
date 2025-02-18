@@ -1,5 +1,6 @@
+// memory, operator
+
 #include <iostream>
-#include <memory>
 
 #ifndef __MATRIX__
 #define __MATRIX__
@@ -56,6 +57,7 @@ public:
     void zeros(size_t row, size_t col);
     void ones(size_t row, size_t col);
 
+    Matrix slice(size_t start_row, size_t end_row) const;
 public:
     size_t row;
     size_t col;

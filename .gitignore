@@ -1,0 +1,6 @@
+*.so
+*.o
+.vscode
+data
+*.npz
+*.png

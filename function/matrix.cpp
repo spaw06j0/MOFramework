@@ -282,5 +282,14 @@ void Matrix::ones(size_t row, size_t col)
     fillwith(row, col, 1.0);
 }
 
-
-
+Matrix Matrix::slice(size_t start_row, size_t end_row) const
+{
+    if (start_row < 0 || end_row > row || start_row >= end_row) {
+        throw std::runtime_error("Invalid slice range");
+    }
+    Matrix temp(end_row - start_row, col);
+    for (size_t i = 0; i < (end_row - start_row) * col; i++) {
+        temp.data[i] = data[start_row * col + i];
+    }
+    return temp;
+}
