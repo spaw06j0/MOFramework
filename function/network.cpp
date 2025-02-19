@@ -32,7 +32,7 @@ std::vector<std::vector<Matrix>>  Network::backward(Matrix &Gradient)
 }
 
 void Network::apply_gradient(std::vector<std::vector<Matrix>> &gradients) {
-    for (int i = 0; i < layers.size(); i++) {
+    for (size_t i = 0; i < layers.size(); i++) {
         if (layers[i]->getTrainable()) {
             layers[i]->apply_gradient(gradients[i]);
         }

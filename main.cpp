@@ -2,6 +2,7 @@
 #include "linear.h"
 #include "activation.h"
 #include "optimizer.h"
+#include "loss.h"
 #include <vector>
 #include <iostream>
 #include <random>
@@ -95,14 +96,16 @@ int main() {
     layers.push_back(new Linear(784, 128, true));  // Input layer: 784 -> 128
     layers.push_back(new ReLU());                  // ReLU activation
     layers.push_back(new Linear(128, 10, true));   // Output layer: 128 -> 10 (for digits 0-9)
-    layers.push_back(new Sigmoid());               // Sigmoid activation for final layer
     
     // Create network
     Network network(layers);
     
     // Create optimizer
     SGD optimizer(0.01, 0.9);  // learning rate = 0.01, momentum = 0.9
-    
+
+    // Create loss function
+    CategoricalCrossentropy loss_fn;
+
     // Load training data
     auto [train_images, train_labels] = load_mnist_data("/home/tri/jin/spaw06j0/MOFramework/data/train-images-idx3-ubyte", 
                                                        "/home/tri/jin/spaw06j0/MOFramework/data/train-labels-idx1-ubyte", 
@@ -130,14 +133,18 @@ int main() {
             // Forward pass
             Matrix predictions = network.forward(batch_images);
             
-            // Compute loss gradient (assuming binary cross-entropy loss)
-            Matrix loss_gradient = predictions - batch_labels;
+            // Compute loss
+            Matrix loss = loss_fn(predictions, batch_labels);
+            total_loss += loss.sum();
             
-            // Backward pass
-            auto gradients = network.backward(loss_gradient);
+            // Get initial gradient from loss function
+            Matrix loss_gradient = loss_fn.backward();
             
-            // Update weights
-            optimizer.apply_gradient(network, gradients);
+            // Backward pass through network - this returns gradients for each layer
+            std::vector<std::vector<Matrix>> layer_gradients = network.backward(loss_gradient);
+            
+            // Apply gradients using optimizer
+            optimizer.apply_gradient(network, layer_gradients);
             
             // Print progress
             if(batch % 100 == 0) {
@@ -145,7 +152,8 @@ int main() {
                          << ", Batch " << batch << "/" << num_batches << std::endl;
             }
         }
-        
+        total_loss /= num_batches;
+        std::cout << "Epoch " << epoch + 1 << " completed. Loss: " << total_loss << std::endl;
         // Evaluate on test set
         Matrix test_predictions = network.forward(test_images);
         float accuracy = compute_accuracy(test_predictions, test_labels);

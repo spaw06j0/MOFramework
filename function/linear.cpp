@@ -12,14 +12,31 @@ Linear::Linear(int in_channel, int out_channel, bool useBias, bool trainable):
 Linear::~Linear() {}
 // z = W^T * x + b
 Matrix Linear::forward(const Matrix &input) {
-    if (input.getCol() != weight.getRow()) {
+    Layer::forward(input);
+    // std::cout << "input: " << input.getRow() << " " << input.getCol() << std::endl;
+    // std::cout << "weight: " << this->weight.getRow() << " " << this->weight.getCol() << std::endl;
+    if (input.getCol() != this->weight.getRow()) {
         throw std::runtime_error("Input matrix column size does not match weight matrix row size\n");
     }
     // out = weight * input + bias
     // TODO: multiply operation need to be optimized by accelerated operation (e.g. parallel programming)
-    Matrix output = input * weight; //
+    //  matrix multiply operation
+    // size_t row = input.getRow();
+    // size_t col = this->weight.getCol();
+    // size_t content = input.getCol();
+    // Matrix output(row, col);
+    // for (size_t i = 0; i < row; i++) {
+    //     for (size_t j = 0; j < col; j++) {
+    //         double sum = 0.0;
+    //         for (size_t k = 0; k < content; k++) {
+    //             sum += input(i, k) * weight(k, j);
+    //         }
+    //         output(i, j) = sum;
+    //     }
+    // }
+    Matrix output = multiply(input, this->weight);
     if (useBias) {
-        output = output + bias; //
+        output = output + this->bias;
     }
     return output;
 }
@@ -29,23 +46,27 @@ std::pair<Matrix, std::vector<Matrix>> Linear::backward(Matrix &gradient) {
     
     // For weights: dL/dw = x^T * dL/dz
     // Since forward: z = xW, backward needs x^T
-    weightGradient = input.T() * gradient;
-    
+    // matrix multiply operation
+    // weightGradient = input.T() * gradient;
+    this->weightGradient = multiply(this->input.T(), gradient);
     // For input: dL/dx = dL/dz * W^T
     // Since forward: z = xW, backward needs W^T
-    Matrix dzdx = gradient * weight.T();
-    
+    // Matrix dzdx = gradient * weight.T();
+    Matrix dzdx = multiply(gradient, this->weight.T());
     // For bias: dL/db = sum(dL/dz) across batch dimension
     // Since forward: z = xW + b, backward sums the gradients
     if (useBias) {
         Matrix ones = Matrix(1, gradient.getRow());
         ones.fillwith(1, gradient.getRow(), 1.0);
-        biasGradient = ones * gradient;
+        this->biasGradient = multiply(ones, gradient);
+        return std::pair<Matrix, std::vector<Matrix>>(
+            dzdx,
+            {this->weightGradient, this->biasGradient}
+        );
     }
-    
     return std::pair<Matrix, std::vector<Matrix>>(
-        dzdx,                           // gradients for previous layer
-        {weightGradient, biasGradient}  // gradients for this layer's parameters
+        dzdx,
+        {this->weightGradient}
     );
 }
 

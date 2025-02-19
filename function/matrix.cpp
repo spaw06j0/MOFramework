@@ -138,12 +138,28 @@ void Matrix::operator=(const Matrix &target)
 #define MATRIX_OP_MATRIX(FUNCNAME, OP) \
 Matrix Matrix::FUNCNAME(const Matrix &mat) const \
 { \
-    if (row != mat.row || col != mat.col) { \
-        throw std::runtime_error("row or col not match"); \
+    size_t row = std::max(mat.row, this->row); \
+    size_t col = std::max(mat.col, this->col); \
+    if (row != mat.row && !(mat.row == 1 || this->row == 1)) { \
+        throw std::runtime_error("shape is not broadcastable in row"); \
+    } \
+    else if (col != mat.col && !(mat.col == 1 || this->col == 1)) { \
+        throw std::runtime_error("shape is not broadcastable in col"); \
     } \
     Matrix temp(row, col); \
-    for (size_t i = 0; i < row * col; i++) { \
-        temp.data[i] = data[i] OP mat.data[i]; \
+    if (mat.row == this->row && mat.col == this->col) { \
+        for (size_t i = 0; i < row * col; i++) { \
+            temp.data[i] = data[i] OP mat.data[i]; \
+        } \
+    } \
+    else { \
+        for (size_t i = 0; i < row; i++) { \
+            for (size_t j = 0; j < col; j++) { \
+                temp.data[i * col + j] = \
+                    (*this)(i % this->row, j % this->col) OP \
+                        mat(i % mat.row, j % mat.col); \
+            } \
+        } \
     } \
     return temp; \
 } \
@@ -172,6 +188,17 @@ Matrix Matrix::FUNCNAME(double num) const \
     return temp; \
 } \
 
+// num + mat
+#define DOUBLE_OP_MATRIX(FUNCNAME, OP) \
+Matrix FUNCNAME(double num, const Matrix &mat) \
+{ \
+    Matrix temp(mat.row, mat.col); \
+    for (size_t i = 0; i < mat.row * mat.col; i++) { \
+        temp.data[i] = num OP mat.data[i]; \
+    } \
+    return temp; \
+} \
+
 // mat += num
 #define MATRIX_ASSIGN_OP_DOUBLE(FUNCNAME, OP) \
 Matrix& Matrix::FUNCNAME(double num) \
@@ -186,24 +213,28 @@ Matrix& Matrix::FUNCNAME(double num) \
 MATRIX_OP_MATRIX(operator+, +)
 MATRIX_ASSIGN_OP_MATRIX(operator+=, +=)
 MATRIX_OP_DOUBLE(operator+, +)
+DOUBLE_OP_MATRIX(operator+, +)
 MATRIX_ASSIGN_OP_DOUBLE(operator+=, +=)
 
 // -
 MATRIX_OP_MATRIX(operator-, -)
 MATRIX_ASSIGN_OP_MATRIX(operator-=, -=)
 MATRIX_OP_DOUBLE(operator-, -)
+DOUBLE_OP_MATRIX(operator-, -)
 MATRIX_ASSIGN_OP_DOUBLE(operator-=, -=)
 
 // *
 MATRIX_OP_MATRIX(operator*, *)
 MATRIX_ASSIGN_OP_MATRIX(operator*=, *=)
 MATRIX_OP_DOUBLE(operator*, *)
+DOUBLE_OP_MATRIX(operator*, *)
 MATRIX_ASSIGN_OP_DOUBLE(operator*=, *=)
 
 // /
 MATRIX_OP_MATRIX(operator/, /)
 MATRIX_ASSIGN_OP_MATRIX(operator/=, /=)
 MATRIX_OP_DOUBLE(operator/, /)
+DOUBLE_OP_MATRIX(operator/, /)
 MATRIX_ASSIGN_OP_DOUBLE(operator/=, /=)
 
 Matrix Matrix::power(double p) const
@@ -290,6 +321,24 @@ Matrix Matrix::slice(size_t start_row, size_t end_row) const
     Matrix temp(end_row - start_row, col);
     for (size_t i = 0; i < (end_row - start_row) * col; i++) {
         temp.data[i] = data[start_row * col + i];
+    }
+    return temp;
+}
+
+Matrix multiply(const Matrix &mat1, const Matrix &mat2) 
+{
+    size_t row = mat1.getRow();
+    size_t col = mat2.getCol();
+    size_t mid = mat1.getCol();
+    Matrix temp(row, col);
+    for (size_t i = 0; i < row; i++) {
+        for (size_t j = 0; j < col; j++) {
+            double sum = 0.0;
+            for (size_t k = 0; k < mid; k++) {
+                sum += mat1(i, k) * mat2(k, j);
+            }
+            temp(i, j) = sum;
+        }
     }
     return temp;
 }

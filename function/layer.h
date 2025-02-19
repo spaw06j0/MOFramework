@@ -10,7 +10,7 @@ class Layer {
 public:
     Layer();
     Layer(bool trainable, bool hasTrainableVar): trainable(trainable), hasTrainableVar(hasTrainableVar) {}
-    ~Layer();
+    virtual ~Layer();
     bool getTrainable() const {return trainable;}
     bool getHasTrainableVar() const {return hasTrainableVar;}
 

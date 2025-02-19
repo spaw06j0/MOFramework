@@ -1,6 +1,7 @@
 // memory, operator
 
 #include <iostream>
+#include <cmath>
 
 #ifndef __MATRIX__
 #define __MATRIX__
@@ -58,10 +59,42 @@ public:
     void ones(size_t row, size_t col);
 
     Matrix slice(size_t start_row, size_t end_row) const;
+
+    // Element-wise multiplication
+    Matrix hadamard(const Matrix& other) const {
+        if (row != other.row || col != other.col) {
+            throw std::runtime_error("Matrix dimensions do not match for hadamard product");
+        }
+        Matrix result(row, col);
+        for (size_t i = 0; i < row * col; i++) {
+            result.data[i] = data[i] * other.data[i];
+        }
+        return result;
+    }
+
+    // Element-wise square root
+    Matrix sqrt() const {
+        Matrix result(row, col);
+        for (size_t i = 0; i < row * col; i++) {
+            result.data[i] = std::sqrt(data[i]);
+        }
+        return result;
+    }
+
+    double sum() const {
+        double total = 0.0;
+        for (size_t i = 0; i < row * col; i++) {
+            total += data[i];
+        }
+        return total;
+    }
+
 public:
     size_t row;
     size_t col;
     double *data;
 };
+
+Matrix multiply(const Matrix &mat1, const Matrix &mat2);
 
 #endif
