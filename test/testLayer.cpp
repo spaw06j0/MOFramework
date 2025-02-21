@@ -29,16 +29,14 @@ void testing() {
     assert(layer.getHasTrainableVar() == true);
 
     // Test forward
-    Matrix input(2, 3);
-    input.fillwith(2, 3, 1.0);
+    Matrix input = Matrix::fillwith(2, 3, 1.0);
     Matrix output = layer.forward(input);
     assert(output.row == input.row);
     assert(output.col == input.col);
     assert(output(0,0) == 2.0); 
 
     // Test backward
-    Matrix gradient(2, 3);
-    gradient.fillwith(2, 3, 1.0);
+    Matrix gradient = Matrix::fillwith(2, 3, 1.0);
     auto [d_input, d_gradient] = layer.backward(gradient);
     assert(d_input.row == input.row);
     assert(d_input.col == input.col);

@@ -11,6 +11,8 @@ public:
     Layer();
     Layer(bool trainable, bool hasTrainableVar): trainable(trainable), hasTrainableVar(hasTrainableVar) {}
     virtual ~Layer();
+    Matrix operator()(Matrix &input);
+
     bool getTrainable() const {return trainable;}
     bool getHasTrainableVar() const {return hasTrainableVar;}
 

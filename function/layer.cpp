@@ -4,6 +4,12 @@ Layer::Layer() {}
 
 Layer::~Layer() {}
 
+Matrix Layer::operator()(Matrix &input)
+{
+    this->input = input;
+    return this->forward(input);
+}
+
 Matrix Layer::forward(const Matrix &input)
 {
     this->input = input;

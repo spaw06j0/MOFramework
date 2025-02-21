@@ -10,6 +10,7 @@ class Matrix {
 public:
     Matrix();
     Matrix(size_t row, size_t col);
+
     template<typename Type>
     Matrix(Type* ptr, size_t row, size_t col);
     Matrix(const Matrix &target);
@@ -53,10 +54,12 @@ public:
     size_t getRow() const {return row;}
     size_t getCol() const {return col;}
     double *getData() const {return data;}
-
-    void fillwith(size_t row, size_t col, double num);
-    void zeros(size_t row, size_t col);
-    void ones(size_t row, size_t col);
+    void printShape() {
+        std::cout << "row: " << row << " col: " << col << std::endl;
+    }
+    static Matrix fillwith(size_t row, size_t col, double num);
+    static Matrix zeros(size_t row, size_t col);
+    static Matrix ones(size_t row, size_t col);
 
     Matrix slice(size_t start_row, size_t end_row) const;
 

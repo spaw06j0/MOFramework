@@ -2,7 +2,7 @@
 
 Matrix BaseLoss::operator()(const Matrix &prediction, const Matrix &ground_truth)
 {
-    this->input=prediction;
+    this->input = prediction;
     return this->forward(prediction, ground_truth);
 }
 
@@ -19,13 +19,13 @@ Matrix BaseLoss::backward()
 Matrix MSE::forward(const Matrix &prediction, const Matrix &ground_truth)
 {
     Matrix result = (prediction-ground_truth).power(2.0);
-    gradient = (prediction - ground_truth) * 2.0;
+    this->gradient = (prediction - ground_truth) * 2.0;
     return result;
 }
 
 Matrix MSE::backward()
 {
-    return gradient;
+    return this->gradient;
 }
 
 Matrix CategoricalCrossentropy::forward(const Matrix &prediction, const Matrix &ground_truth)
@@ -38,11 +38,11 @@ Matrix CategoricalCrossentropy::forward(const Matrix &prediction, const Matrix &
         }
     }
     Matrix normalize = mat_exp / mat_exp_sum;
-    gradient = normalize - ground_truth;
+    this->gradient = normalize - ground_truth;
     return normalize.log() * ground_truth * -1.0;
 }
 
 Matrix CategoricalCrossentropy::backward()
 {
-    return gradient;
+    return this->gradient;
 }

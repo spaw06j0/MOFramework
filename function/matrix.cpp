@@ -7,10 +7,12 @@ Matrix::Matrix() : row(0), col(0), data(nullptr) {}
 
 Matrix::Matrix(size_t row, size_t col)
     : row(row), col(col),
-      data(new double[row * col])
+      data(nullptr)
 {   
+    size_t element = row * col;
+    data = new double[element];
     if (data != nullptr) {
-        memset(data, 0, row * col * sizeof(double));
+        memset(data, 0, element * sizeof(double));
     }
     else {
         std::cout << "Out of memory" << std::endl;
@@ -19,20 +21,32 @@ Matrix::Matrix(size_t row, size_t col)
 template<typename Type>
 Matrix::Matrix(Type* ptr, size_t row, size_t col)
     : row(row), col(col),
-      data(new double[row * col])
+      data(nullptr)
 {
-    for (size_t i = 0; i < row * col; i++) {
-        data[i] = (double)ptr[i];
+    size_t element = row * col;
+    data = new double[element];
+    if (data != nullptr) {
+        for (size_t i = 0; i < element; i++) {
+            data[i] = (double)ptr[i];
+        }
     }
-}
-Matrix::Matrix(const Matrix &target)
-    : row(target.row), col(target.col),
-      data(new double[target.row * target.col])
-{
-    if (data == nullptr) {
+    else {
         std::cout << "Out of memory" << std::endl;
     }
-    memcpy(data, target.data, sizeof(double) * row * col);
+}
+
+Matrix::Matrix(const Matrix &target)
+{
+    row = target.getRow();
+    col = target.getCol();
+    size_t element = row * col;
+    data = new double[element];
+    if (data != nullptr) {
+        memcpy(data, target.data, sizeof(double) * element);
+    }
+    else {
+        std::cout << "Out of memory" << std::endl;
+    }
 }
 
 Matrix::~Matrix()
@@ -44,7 +58,7 @@ Matrix::~Matrix()
 
 double Matrix::operator() (size_t row, size_t col) const
 {
-    if (row >= this->row || col >= this->col) {
+    if (row > this->row || col > this->col) {
         throw std::runtime_error("row or col out of bound");
     }
     return data[row * this->col + col];
@@ -52,7 +66,7 @@ double Matrix::operator() (size_t row, size_t col) const
 
 double &Matrix::operator() (size_t row, size_t col)
 {
-    if (row >= this->row || col >= this->col) {
+    if (row > this->row || col > this->col) {
         throw std::runtime_error("row or col out of bound");
     }
     return data[row * this->col + col];
@@ -60,13 +74,13 @@ double &Matrix::operator() (size_t row, size_t col)
 
 bool Matrix::operator==(const Matrix &target) const
 {
-    if (row != target.row || col != target.col) {
+    if (row != target.getRow() || col != target.getCol()) {
         return false;
     }
     else {
         for (size_t i = 0; i < row; i++) {
             for (size_t j = 0; j < col; j++) {
-                if(data[i * col + j] != target.data[i * col + j]) {
+                if((*this)(i, j) != target(i, j)) {
                     return false;
                 }
             }
@@ -78,12 +92,14 @@ bool Matrix::operator==(const Matrix &target) const
 void Matrix::operator=(const Matrix &target)
 {
     if (this == &target) return;
-    
-    delete[] data;
-    row = target.row;
-    col = target.col;
-    data = new double[row * col];
-    memcpy(data, target.data, sizeof(double) * row * col);
+    if (data != nullptr) {
+        delete[] data;
+    }
+    row = target.getRow();
+    col = target.getCol();
+    size_t element = row * col;
+    data = new double[element];
+    memcpy(data, target.data, sizeof(double) * element);
 }
 
 // Matrix Matrix::operator+(const Matrix &mat) const
@@ -140,15 +156,15 @@ Matrix Matrix::FUNCNAME(const Matrix &mat) const \
 { \
     size_t row = std::max(mat.row, this->row); \
     size_t col = std::max(mat.col, this->col); \
-    if (row != mat.row && !(mat.row == 1 || this->row == 1)) { \
+    if (this->row != mat.row && !(mat.row == 1 || this->row == 1)) { \
         throw std::runtime_error("shape is not broadcastable in row"); \
     } \
-    else if (col != mat.col && !(mat.col == 1 || this->col == 1)) { \
+    else if (this->col != mat.col && !(mat.col == 1 || this->col == 1)) { \
         throw std::runtime_error("shape is not broadcastable in col"); \
     } \
     Matrix temp(row, col); \
     if (mat.row == this->row && mat.col == this->col) { \
-        for (size_t i = 0; i < row * col; i++) { \
+        for (size_t i = 0; i < this->row * this->col; i++) { \
             temp.data[i] = data[i] OP mat.data[i]; \
         } \
     } \
@@ -171,8 +187,10 @@ Matrix& Matrix::FUNCNAME(const Matrix &mat) \
     if (row != mat.row || col != mat.col) { \
         throw std::runtime_error("row or col not match"); \
     } \
-    for (size_t i = 0; i < row * col; i++) { \
-        data[i] OP mat.data[i]; \
+    for (size_t i = 0; i < this->row; i++) { \
+        for (size_t j = 0; j < this->col; j++) { \
+            data[i * this->col + j] OP mat(i, j); \
+        } \
     } \
     return *this; \
 } \
@@ -181,9 +199,9 @@ Matrix& Matrix::FUNCNAME(const Matrix &mat) \
 #define MATRIX_OP_DOUBLE(FUNCNAME, OP) \
 Matrix Matrix::FUNCNAME(double num) const \
 { \
-    Matrix temp(row, col); \
-    for (size_t i = 0; i < row * col; i++) { \
-        temp.data[i] = num OP data[i]; \
+    Matrix temp(this->row, this->col); \
+    for (size_t i = 0; i < this->row * this->col; i++) { \
+        temp.data[i] = data[i] OP num; \
     } \
     return temp; \
 } \
@@ -192,7 +210,7 @@ Matrix Matrix::FUNCNAME(double num) const \
 #define DOUBLE_OP_MATRIX(FUNCNAME, OP) \
 Matrix FUNCNAME(double num, const Matrix &mat) \
 { \
-    Matrix temp(mat.row, mat.col); \
+    Matrix temp(mat); \
     for (size_t i = 0; i < mat.row * mat.col; i++) { \
         temp.data[i] = num OP mat.data[i]; \
     } \
@@ -203,7 +221,7 @@ Matrix FUNCNAME(double num, const Matrix &mat) \
 #define MATRIX_ASSIGN_OP_DOUBLE(FUNCNAME, OP) \
 Matrix& Matrix::FUNCNAME(double num) \
 { \
-    for (size_t i = 0; i < row * col; i++) { \
+    for (size_t i = 0; i < this->row * this->col; i++) { \
         data[i] OP num; \
     } \
     return *this; \
@@ -250,7 +268,16 @@ Matrix Matrix::exp() const
 {
     Matrix temp(row, col);
     for (size_t i = 0; i < row * col; i++) {
-        temp.data[i] = std::exp(data[i]);
+        auto x = std::exp(data[i]);
+        if (std::isnan(x)) {
+            temp.data[i] = 0.0;
+        }
+        else if (std::isinf(x)) {
+            temp.data[i] = 10^5;
+        }
+        else {
+            temp.data[i] = x;
+        }
     }
     return temp;
 }
@@ -293,24 +320,23 @@ Matrix Matrix::T() const
     return temp;
 }
 
-void Matrix::fillwith(size_t row, size_t col, double num)
+Matrix Matrix::fillwith(size_t row, size_t col, double num)
 {
-    if (row != this->row || col != this->col) {
-        throw std::runtime_error("row or col not match");
-    }
+    Matrix temp(row, col);
     for (size_t i = 0; i < row * col; i++) {
-        data[i] = num;
+        temp.data[i] = num;
     }
+    return temp;
 }
 
-void Matrix::zeros(size_t row, size_t col)
+Matrix Matrix::zeros(size_t row, size_t col)
 {
-    fillwith(row, col, 0.0);
+    return fillwith(row, col, 0.0);
 }
 
-void Matrix::ones(size_t row, size_t col)
+Matrix Matrix::ones(size_t row, size_t col)
 {
-    fillwith(row, col, 1.0);
+    return fillwith(row, col, 1.0);
 }
 
 Matrix Matrix::slice(size_t start_row, size_t end_row) const
@@ -330,6 +356,9 @@ Matrix multiply(const Matrix &mat1, const Matrix &mat2)
     size_t row = mat1.getRow();
     size_t col = mat2.getCol();
     size_t mid = mat1.getCol();
+    if (mid != mat2.getRow()) {
+        throw std::runtime_error("matrix dimension not match");
+    }
     Matrix temp(row, col);
     for (size_t i = 0; i < row; i++) {
         for (size_t j = 0; j < col; j++) {

@@ -16,13 +16,16 @@ public:
     void apply_gradient(std::vector<Matrix> gradients);
     void set_weight(std::vector<Matrix> weight_list);
     std::vector<Matrix> get_weight();
+    void print_weight_stats();
 
 private:
     size_t inChannel;
     size_t outChannel;
     bool useBias;
+    // forward
     Matrix weight;
     Matrix bias;
+    // backward
     Matrix weightGradient;
     Matrix biasGradient;
 };

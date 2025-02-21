@@ -1,11 +1,28 @@
 #include "linear.h"
+#include "matrix.h"
+#include <random>
 
 Linear::Linear(int in_channel, int out_channel, bool useBias, bool trainable):
     Layer(trainable, true), inChannel(in_channel), outChannel(out_channel), useBias(useBias) 
 {
+    // Xavier initialization
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    double limit = std::sqrt(6.0 / (in_channel + out_channel));
+    std::uniform_real_distribution<> dis(-limit, limit);
+    
     weight = Matrix(in_channel, out_channel);
+    for(size_t i = 0; i < weight.getRow(); i++) {
+        for(size_t j = 0; j < weight.getCol(); j++) {
+            weight(i,j) = dis(gen);
+        }
+    }
+    // random_bias=np.random.standard_normal((1, out_feat))*0.01 + 1 / out_feat
     if (useBias) {
         bias = Matrix(1, out_channel);
+        for(size_t i = 0; i < bias.getCol(); i++) {
+            bias(0,i) = dis(gen);
+        }
     }
 }
 
@@ -56,8 +73,7 @@ std::pair<Matrix, std::vector<Matrix>> Linear::backward(Matrix &gradient) {
     // For bias: dL/db = sum(dL/dz) across batch dimension
     // Since forward: z = xW + b, backward sums the gradients
     if (useBias) {
-        Matrix ones = Matrix(1, gradient.getRow());
-        ones.fillwith(1, gradient.getRow(), 1.0);
+        Matrix ones = Matrix::ones(1, gradient.getRow());
         this->biasGradient = multiply(ones, gradient);
         return std::pair<Matrix, std::vector<Matrix>>(
             dzdx,
@@ -66,21 +82,20 @@ std::pair<Matrix, std::vector<Matrix>> Linear::backward(Matrix &gradient) {
     }
     return std::pair<Matrix, std::vector<Matrix>>(
         dzdx,
-        {this->weightGradient}
-    );
+        {this->weightGradient});
 }
 
 void Linear::set_weight(std::vector<Matrix> weight_list) {
     Matrix &weight = weight_list[0];
     if (weight.getRow() != inChannel || weight.getCol() != outChannel) {
-        throw std::runtime_error("Invalid weight matrix shape\n");
+        throw std::runtime_error("Linear::set_weight: Invalid weight matrix shape\n");
     }
     this->weight = weight;
 
     if (useBias) {
         Matrix &bias = weight_list[1];
         if (bias.getRow() != 1 || bias.getCol() != outChannel) {
-            throw std::runtime_error("Invalid bias matrix shape\n");
+            throw std::runtime_error("Linear::set_weight: Invalid bias matrix shape\n");
         }
         this->bias = bias;
     }
@@ -98,8 +113,26 @@ void Linear::apply_gradient(std::vector<Matrix> gradients) {
 std::vector<Matrix> Linear::get_weight()
 {
     if (useBias) {
-        return std::vector<Matrix>({weight, bias});
+        return std::vector<Matrix>({this->weight, this->bias});
     }
-    return std::vector<Matrix>({weight});
+    return std::vector<Matrix>({this->weight});
 
+}
+
+void Linear::print_weight_stats() {
+    double sum = 0.0;
+    double max_val = -1e9;
+    double min_val = 1e9;
+    
+    for(size_t i = 0; i < weight.getRow(); i++) {
+        for(size_t j = 0; j < weight.getCol(); j++) {
+            double val = weight(i,j);
+            sum += val;
+            max_val = std::max(max_val, val);
+            min_val = std::min(min_val, val);
+        }
+    }
+    
+    std::cout << "Weight stats - Mean: " << sum/(weight.getRow()*weight.getCol()) 
+              << " Max: " << max_val << " Min: " << min_val << std::endl;
 }
