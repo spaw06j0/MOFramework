@@ -1,84 +1,76 @@
+# Python and pybind11 configuration
+PYTHON_CONFIG = python3-config
+PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
+PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags)
+PYBIND11_INCLUDE = $(shell python3 -m pybind11 --includes)
+
+# Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O2
-INCLUDES = -I./function
+CXXFLAGS = -std=c++17 -Wall -O2 -fPIC
+INCLUDES = -I./ $(PYBIND11_INCLUDE)
 
-# Source files (excluding main.cpp and test files)
-LIB_SRCS = function/linear.cpp \
-           function/network.cpp \
-           function/matrix.cpp \
-           function/optimizer.cpp \
-           function/layer.cpp \
-           function/loss.cpp
+# Source directories
+SRCDIR = function
+OBJDIR = obj
 
-# Object files
-LIB_OBJS = $(LIB_SRCS:.cpp=.o)
+# Create object directory if it doesn't exist
+$(shell mkdir -p $(OBJDIR))
 
-# Test source files
-# TEST_SRCS = test/testMatrix.cpp \
-#             test/testLayer.cpp \
-#             test/testLinear.cpp \
-#             test/testOptimizer.cpp
+# Source files
+LIB_SRCS = $(SRCDIR)/linear.cpp \
+           $(SRCDIR)/network.cpp \
+           $(SRCDIR)/matrix.cpp \
+           $(SRCDIR)/optimizer.cpp \
+           $(SRCDIR)/layer.cpp \
+           $(SRCDIR)/loss.cpp \
+           $(SRCDIR)/activation.cpp
 
-# # Test object files
-# TEST_OBJS = $(TEST_SRCS:.cpp=.o)
+# Object files with path adjustment
+LIB_OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(LIB_SRCS))
+
+BINDING_SRC = $(SRCDIR)/binding.cpp
+BINDING_OBJ = $(OBJDIR)/binding.o
+MODULE_NAME = pynet
+MODULE_FILE = $(MODULE_NAME)$(shell python3-config --extension-suffix)
 
 # Main program
 MAIN_SRC = main.cpp
-MAIN_OBJ = $(MAIN_SRC:.cpp=.o)
+MAIN_OBJ = $(OBJDIR)/main.o
 
 # Executables
 MAIN_TARGET = mnist_train
-# TEST_MATRIX = test_matrix
-# TEST_LAYER = test_layer
-# TEST_LINEAR = test_linear
-# TEST_OPTIMIZER = test_optimizer
 
-# # Default target
-# all: tests $(MAIN_TARGET)
+# Default target
+all: $(MAIN_TARGET)
 
-# # Build and run all tests
-# tests: $(TEST_MATRIX) $(TEST_LAYER) $(TEST_LINEAR) $(TEST_OPTIMIZER)
-# 	@echo "Running Matrix tests..."
-# 	./$(TEST_MATRIX)
-# 	@echo "Running Layer tests..."
-# 	./$(TEST_LAYER)
-# 	@echo "Running Linear tests..."
-# 	./$(TEST_LINEAR)
-# 	@echo "Running Optimizer tests..."
-# 	./$(TEST_OPTIMIZER)
+python_module: $(MODULE_FILE)
+
+# Make sure object directory exists
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
 
 # Main program
 $(MAIN_TARGET): $(MAIN_OBJ) $(LIB_OBJS)
-	$(CXX) $^ -o $@
+	$(CXX) $^ -o $@ $(shell $(PYTHON_CONFIG) --ldflags)
 
-# Test executables
-# $(TEST_MATRIX): test/testMatrix.o $(LIB_OBJS)
-# 	$(CXX) $^ -o $@
+# Python module target 
+$(MODULE_FILE): $(BINDING_SRC) $(LIB_OBJS)
+	$(CXX) -shared -fPIC $(INCLUDES) $^ -o $@ $(PYTHON_LDFLAGS)
 
-# $(TEST_LAYER): test/testLayer.o $(LIB_OBJS)
-# 	$(CXX) $^ -o $@
-
-# $(TEST_LINEAR): test/testLinear.o $(LIB_OBJS)
-# 	$(CXX) $^ -o $@
-
-# $(TEST_OPTIMIZER): test/testOptimizer.o $(LIB_OBJS)
-# 	$(CXX) $^ -o $@
-
-# Compilation
-%.o: %.cpp
+# Compilation rule for main.cpp
+$(OBJDIR)/main.o: $(MAIN_SRC) | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Dependencies
-main.o: main.cpp
-function/linear.o: function/linear.cpp function/linear.h
-function/network.o: function/network.cpp function/network.h
-function/matrix.o: function/matrix.cpp function/matrix.h
-function/optimizer.o: function/optimizer.cpp function/optimizer.h
-function/layer.o: function/layer.cpp function/layer.h
-function/loss.o: function/loss.cpp function/loss.h
+# Compilation rule for binding.cpp
+$(OBJDIR)/binding.o: $(BINDING_SRC) | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o
+
+# Compilation rule for source files in function directory
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Clean
 clean:
-	rm -f $(LIB_OBJS) $(TEST_OBJS) $(MAIN_OBJ) $(MAIN_TARGET) $(TEST_MATRIX) $(TEST_LAYER) $(TEST_LINEAR) $(TEST_OPTIMIZER)
+	rm -rf $(OBJDIR) $(MAIN_TARGET) $(MODULE_FILE)
 
-.PHONY: all clean tests 
+.PHONY: all clean

@@ -1,8 +1,8 @@
-#include "network.h"
-#include "linear.h"
-#include "activation.h"
-#include "optimizer.h"
-#include "loss.h"
+#include "function/network.h"
+#include "function/linear.h"
+#include "function/activation.h"
+#include "function/optimizer.h"
+#include "function/loss.h"
 #include <vector>
 #include <iostream>
 #include <random>
@@ -75,8 +75,6 @@ void check_data(const Matrix& images, const Matrix& labels, const std::string& n
             sum += val;
         }
     }
-    std::cout << "Image value range: [" << min_val << ", " << max_val << "]" << std::endl;
-    std::cout << "Mean pixel value: " << sum / (images.getRow() * images.getCol()) << std::endl;
 
     // Check label distribution
     std::vector<int> label_counts(10, 0);
@@ -212,11 +210,6 @@ int main() {
     auto [test_images, test_labels] = load_mnist_data("/home/tri/jin/spaw06j0/MOFramework/data/t10k-images-idx3-ubyte", 
                                                      "/home/tri/jin/spaw06j0/MOFramework/data/t10k-labels-idx1-ubyte", 
                                                      10000);
-    // std::cout << test_images.getRow() << std::endl;
-    // std::cout << test_images.getCol() << std::endl;
-    // std::cout << test_labels.getRow() << std::endl;
-    // std::cout << test_labels.getCol() << std::endl;
-    // exit(0);
     std::cout << "Successfully load data" << std::endl;
     check_data(train_images, train_labels, "training");
     check_data(test_images, test_labels, "test");
@@ -227,10 +220,9 @@ int main() {
     std::cout << "Start training" << std::endl;
     // Training loop
     for(int epoch = 0; epoch < epochs; epoch++) {
+        std::cout << "--------------------------------" << std::endl;
+        std::cout << "Epoch " << epoch + 1 << " started" << std::endl;
         float total_loss = 0.0;
-        // Linear* first_layer = dynamic_cast<Linear*>(layers[0]);
-        // std::cout << "Start of epoch " << epoch << " weights: " << std::endl;
-        // first_layer->print_weight_stats();
         for(int batch = 0; batch < num_batches; batch++) {
             // Get batch data
             Matrix batch_images = train_images.slice(batch * batch_size, (batch + 1) * batch_size);
@@ -238,46 +230,25 @@ int main() {
 
             // Forward pass
             Matrix predictions = network.forward(batch_images);
-            // std::cout << "Successfully forward pass" << std::endl;
-            // Compute loss
             Matrix loss = loss_fn(predictions, batch_labels);
-            // std::cout << "predictions.getRow(): " << predictions.getRow() << std::endl;
-            // std::cout << "predictions.getCol(): " << predictions.getCol() << std::endl;
-            // std::cout << "batch_labels.getRow(): " << batch_labels.getRow() << std::endl;
-            // std::cout << "batch_labels.getCol(): " << batch_labels.getCol() << std::endl;
-            // std::cout << "loss.getRow(): " << loss.getRow() << std::endl;
-            // std::cout << "loss.getCol(): " << loss.getCol() << std::endl;
-            // exit(0);
-            // std::cout << "Successfully compute loss" << std::endl;
-            // total_loss += loss.sum();
-            
-            // Get initial gradient from loss function
             Matrix loss_gradient = loss_fn.backward();
-            // std::cout << "Successfully compute loss gradient" << std::endl;
-            // Backward pass through network - this returns gradients for each layer
             std::vector<std::vector<Matrix>> layer_gradients = network.backward(loss_gradient);
-            // std::cout << "Successfully compute layer gradient" << std::endl;
-            // Apply gradients using optimizer
             optimizer.apply_gradient(network, layer_gradients);
-            // std::cout << "Successfully apply gradient" << std::endl;
-            // Print progress
+            total_loss += loss.mean();
             if(batch % 100 == 0) {
                 std::cout << "Epoch " << epoch + 1 << "/" << epochs 
-                         << ", Batch " << batch << "/" << num_batches << std::endl;
+                         << ", Batch " << batch << "/" << num_batches << ", Loss: " 
+                         << loss.mean() << std::endl;
             }
         }
-        // total_loss /= num_batches;
-        // std::cout << "Epoch " << epoch + 1 << " completed. Loss: " << total_loss << std::endl;
+        std::cout << std::endl;
+        total_loss /= num_batches;
+        std::cout << "Epoch " << epoch + 1 << " completed. Loss: " << total_loss << std::endl;
         // Evaluate on test set
         Matrix test_predictions = network.forward(test_images);
         float accuracy = compute_accuracy(test_predictions, test_labels);
         std::cout << "Epoch " << epoch + 1 << " completed. Test accuracy: " 
                   << accuracy * 100 << "%" << std::endl;
-    }
-    
-    // Clean up
-    for(auto layer : layers) {
-        delete layer;
     }
     
     return 0;

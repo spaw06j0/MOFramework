@@ -11,8 +11,20 @@ public:
     Matrix();
     Matrix(size_t r, size_t c);
 
+    // template<typename Type>
+    // Matrix(Type* ptr, size_t r, size_t c);
     template<typename Type>
-    Matrix(Type* ptr, size_t r, size_t c);
+    Matrix(Type* ptr, size_t r, size_t c)
+        :row(r), col(c), data(NULL)
+    {
+
+        size_t nelement = r * c;
+        data = new double[nelement];
+        for(size_t i =0; i < nelement; i++) 
+        {
+            data[i] = (double)ptr[i];
+        }
+    }
     Matrix(const Matrix &target);
     ~Matrix();
 
@@ -68,13 +80,16 @@ public:
 
     Matrix slice(size_t start_row, size_t end_row) const;
 
-    // double sum() const {
-    //     double total = 0.0;
-    //     for (size_t i = 0; i < row * col; i++) {
-    //         total += data[i];
-    //     }
-    //     return total;
-    // }
+    double sum() const {
+        double total = 0.0;
+        for (size_t i = 0; i < row * col; i++) {
+            total += data[i];
+        }
+        return total;
+    }
+    double mean() const {
+        return sum() / (row * col);
+    }
 
 public:
     size_t row;

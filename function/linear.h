@@ -18,7 +18,10 @@ public:
     void set_weight(std::vector<Matrix> weight_list);
     std::vector<Matrix> get_weight();
     void print_weight_stats();
-
+    std::pair<size_t, size_t> getChannel();
+    const Matrix& getWeight() const { return weight; }
+    const Matrix& getBias() const { return bias; }
+    
 private:
     size_t inChannel;
     size_t outChannel;

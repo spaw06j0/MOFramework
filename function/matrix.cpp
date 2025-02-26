@@ -18,22 +18,22 @@ Matrix::Matrix(size_t r, size_t c)
         std::cout << "Out of memory" << std::endl;
     }
 }
-template<typename Type>
-Matrix::Matrix(Type* ptr, size_t r, size_t c)
-    : row(r), col(c),
-      data(nullptr)
-{
-    size_t element = row * col;
-    data = new double[element];
-    if (data != nullptr) {
-        for (size_t i = 0; i < element; i++) {
-            data[i] = (double)ptr[i];
-        }
-    }
-    else {
-        std::cout << "Out of memory" << std::endl;
-    }
-}
+// template<typename Type>
+// Matrix::Matrix(Type* ptr, size_t r, size_t c)
+//     : row(r), col(c),
+//       data(nullptr)
+// {
+//     size_t element = row * col;
+//     data = new double[element];
+//     if (data != nullptr) {
+//         for (size_t i = 0; i < element; i++) {
+//             data[i] = (double)ptr[i];
+//         }
+//     }
+//     else {
+//         std::cout << "Out of memory" << std::endl;
+//     }
+// }
 
 Matrix::Matrix(const Matrix &target)
 {

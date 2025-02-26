@@ -107,9 +107,9 @@ void Linear::apply_gradient(std::vector<Matrix> gradients) {
 std::vector<Matrix> Linear::get_weight()
 {
     if (useBias) {
-        return std::vector<Matrix>({this->weight, this->bias});
+        return std::vector<Matrix>({weight, bias});
     }
-    return std::vector<Matrix>({this->weight});
+    return std::vector<Matrix>({weight});
 
 }
 
@@ -129,4 +129,9 @@ void Linear::print_weight_stats() {
     
     std::cout << "Weight stats - Mean: " << sum/(weight.getRow()*weight.getCol()) 
               << " Max: " << max_val << " Min: " << min_val << std::endl;
+}
+
+std::pair<size_t, size_t> Linear::getChannel() {
+    std::cout << "inChannel: " << inChannel << " outChannel: " << outChannel << std::endl;
+    return std::make_pair(inChannel, outChannel);
 }
