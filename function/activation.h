@@ -5,15 +5,15 @@ class Sigmoid: public Layer
 public:
     Sigmoid(): Layer(false, false) {}
 
-    Matrix forward(const Matrix &input)
-    {
-        return input.sigmoid();
+    Matrix forward(const Matrix &input_tensor)
+    {   
+        return input_tensor.sigmoid();
     }
 
     std::pair<Matrix, std::vector<Matrix>> backward(Matrix &gradient)
     {
-        Matrix derivative = input.sigmoid() * (input.sigmoid() * -1.0 + 1.0) * gradient;
-        return std::pair<Matrix, std::vector<Matrix>>(derivative, {});
+        Matrix gradient_flow = input.sigmoid().power(2.0) * (input*-1.0).exp() * gradient;
+        return std::pair<Matrix, std::vector<Matrix>>(gradient_flow, {});
     }
     
 };
@@ -23,9 +23,9 @@ class ReLU: public Layer
 public:
     ReLU(): Layer(false, false) {}
     
-    Matrix forward(const Matrix &input)
+    Matrix forward(const Matrix &input_tensor)
     {
-        return input.relu();
+        return input_tensor.relu();
     }
 
     std::pair<Matrix, std::vector<Matrix>> backward(Matrix &gradient)

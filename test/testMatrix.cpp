@@ -11,12 +11,11 @@ void test_matrix() {
 
     // Test fillwith
     mat1 = Matrix::fillwith(2, 3, 2.5);
-    assert(mat1(0, 0) == 2.5);
-    assert(mat1(0, 1) == 2.5);
-    assert(mat1(0, 2) == 2.5);
-    assert(mat1(1, 0) == 2.5);
-    assert(mat1(1, 1) == 2.5);
-    assert(mat1(1, 2) == 2.5);
+    for (size_t i = 0; i < mat1.row; i++) {
+        for (size_t j = 0; j < mat1.col; j++) {
+            assert(mat1(i, j) == 2.5);
+        }
+    }
 
     // Test copy constructor
     Matrix mat2(mat1);
@@ -30,72 +29,96 @@ void test_matrix() {
     // Test addtion
     Matrix mat4 = Matrix::fillwith(2, 3, 1.0);
     Matrix mat5 = mat1 + mat4;
-    assert(mat5(0, 0) == 3.5);
-    assert(mat5(0, 1) == 3.5);
-    assert(mat5(0, 2) == 3.5);
+    for (size_t i = 0; i < mat5.row; i++) {
+        for (size_t j = 0; j < mat5.col; j++) {
+            assert(mat5(i, j) == 3.5);
+        }
+    }
     
     // Test scalar addtion
     Matrix mat6 = mat1 + 1.0;
-    assert(mat6(0, 0) == 3.5);
-    assert(mat6(0, 1) == 3.5);
-    assert(mat6(0, 2) == 3.5);
+    for (size_t i = 0; i < mat6.row; i++) {
+        for (size_t j = 0; j < mat6.col; j++) {
+            assert(mat6(i, j) == 3.5);
+        }
+    }
 
     // Test +=
     mat1 += mat4;
-    assert(mat1(0, 0) == 3.5);
-    assert(mat1(0, 1) == 3.5);
-    assert(mat1(0, 2) == 3.5);
+    for (size_t i = 0; i < mat1.row; i++) {
+        for (size_t j = 0; j < mat1.col; j++) {
+            assert(mat1(i, j) == 3.5);
+        }
+    }
     
     // Test -=
     mat1 -= mat4;
-    assert(mat1(0, 0) == 2.5);
-    assert(mat1(0, 1) == 2.5);
-    assert(mat1(0, 2) == 2.5);
+    for (size_t i = 0; i < mat1.row; i++) {
+        for (size_t j = 0; j < mat1.col; j++) {
+            assert(mat1(i, j) == 2.5);
+        }
+    }
 
     // Test -= scalar
     mat1 -= 1.0;
-    assert(mat1(0, 0) == 1.5);
-    assert(mat1(0, 1) == 1.5);
-    assert(mat1(0, 2) == 1.5);
+    for (size_t i = 0; i < mat1.row; i++) {
+        for (size_t j = 0; j < mat1.col; j++) {
+            assert(mat1(i, j) == 1.5);
+        }
+    }
     
     // Test *=
     Matrix mat7 = Matrix::fillwith(2, 3, 2.0);
     Matrix mat8 = Matrix::fillwith(2, 3, 2.0);
     mat8 *= mat7;
-    assert(mat8(0, 0) == 4.0);
-    assert(mat8(0, 1) == 4.0);
-    assert(mat8(0, 2) == 4.0);
+    for (size_t i = 0; i < mat8.row; i++) {
+        for (size_t j = 0; j < mat8.col; j++) {
+            assert(mat8(i, j) == 4.0);
+        }
+    }
 
     // Test *= scalar
     mat8 *= 2.0;
-    assert(mat8(0, 0) == 8.0);
-    assert(mat8(0, 1) == 8.0);
-    assert(mat8(0, 2) == 8.0);
+    for (size_t i = 0; i < mat8.row; i++) {
+        for (size_t j = 0; j < mat8.col; j++) {
+            assert(mat8(i, j) == 8.0);
+        }
+    }
 
     // Test /=
     Matrix mat9 = Matrix::fillwith(2, 3, 2.0);
     mat9 /= mat7;
-    assert(mat9(0, 0) == 1.0);
+    for (size_t i = 0; i < mat9.row; i++) {
+        for (size_t j = 0; j < mat9.col; j++) {
+            assert(mat9(i, j) == 1.0);
+        }
+    }
 
     // Test /= scalar
     mat9 /= 2.0;
-    assert(mat9(0, 0) == 0.5);
-    assert(mat9(0, 1) == 0.5);
-    assert(mat9(0, 2) == 0.5);
+    for (size_t i = 0; i < mat9.row; i++) {
+        for (size_t j = 0; j < mat9.col; j++) {
+            assert(mat9(i, j) == 0.5);
+        }
+    }
 
     // Test power
     Matrix mat10 = Matrix::fillwith(2, 3, 2.0);
     Matrix mat11 = mat10.power(2.0);
-    assert(mat11(0, 0) == 4.0);
-    assert(mat11(0, 1) == 4.0);
-    assert(mat11(0, 2) == 4.0);
+    for (size_t i = 0; i < mat11.row; i++) {
+        for (size_t j = 0; j < mat11.col; j++) {
+            assert(mat11(i, j) == 4.0);
+        }
+    }
 
     // Test exp
     Matrix mat12 = Matrix::fillwith(2, 3, 1.0);
     Matrix mat13 = mat12.exp();
-    assert(mat13(0, 0) == std::exp(1.0));
-    assert(mat13(0, 1) == std::exp(1.0));
-    assert(mat13(0, 2) == std::exp(1.0));
+    for (size_t i = 0; i < mat13.row; i++) {
+        for (size_t j = 0; j < mat13.col; j++) {
+            assert(std::abs(mat13(i, j) == std::exp(1.0)));
+        }
+    }
 
     // Test log
     Matrix mat14 = Matrix::fillwith(2, 3, std::exp(1.0));

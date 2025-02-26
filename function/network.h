@@ -8,10 +8,10 @@ public:
     Network(std::vector<Layer*> layers);
     ~Network();
 
-    Matrix forward(Matrix input);
-    std::vector<std::vector<Matrix>> backward(Matrix gradient);
+    Matrix forward(Matrix input_tensor);
+    std::vector<std::vector<Matrix>> backward(Matrix Gradients);
     std::vector<Layer*>& get_layers() {return layers;}
-    void apply_gradient(std::vector<std::vector<Matrix>> gradients);
+    void apply_gradients(std::vector<std::vector<Matrix>> gradients);
     
 private:
     std::vector<Layer*> layers;

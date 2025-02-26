@@ -46,3 +46,35 @@ Matrix CategoricalCrossentropy::backward()
 {
     return this->gradient;
 }
+
+// class CategoricalCrossentropy: public BaseLoss {
+// public:
+//     CategoricalCrossentropy(): BaseLoss() {}
+    
+//     Matrix forward(const Matrix &prediction, const Matrix &ground_truth) {
+//         // Store for backward pass
+//         this->input = prediction;
+//         this->truth = ground_truth;
+        
+//         // Compute cross entropy directly (assume input is already softmaxed)
+//         Matrix loss(prediction.getRow(), 1);
+//         for(size_t i = 0; i < prediction.getRow(); i++) {
+//             double sample_loss = 0;
+//             for(size_t j = 0; j < prediction.getCol(); j++) {
+//                 if(ground_truth(i,j) > 0) {
+//                     // Add small epsilon to avoid log(0)
+//                     sample_loss -= ground_truth(i,j) * std::log(std::max(prediction(i,j), 1e-7));
+//                 }
+//             }
+//             loss(i,0) = sample_loss;
+//         }
+//         return loss;
+//     }
+
+//     Matrix backward() {
+//         // Gradient is (prediction - target)
+//         return input - truth;
+//     }
+// private:
+//     Matrix truth;
+// };

@@ -25,7 +25,7 @@ public:
 void testing() {
     TestLayer layer;
     // Test Constructor
-    assert(layer.getTrainable() == true);
+    assert(layer.getTrainableVar() == true);
     assert(layer.getHasTrainableVar() == true);
 
     // Test forward

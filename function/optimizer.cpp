@@ -5,7 +5,7 @@
 void SGD::apply_gradient(Network &network, std::vector<std::vector<Matrix>> gradients)
 {
     std::vector<std::vector<Matrix>> processed_grad = this->process_gradient(gradients);
-    network.apply_gradient(processed_grad);
+    network.apply_gradients(processed_grad);
 }
 
 std::vector<std::vector<Matrix>> SGD::process_gradient(std::vector<std::vector<Matrix>> gradient)

@@ -124,10 +124,85 @@ void verify_linear_layer_correctness() {
     std::cout << "Weight update test passed!" << std::endl;
 }
 
+void test_linear_layer() {
+    // 1. Create a simple linear layer
+    int in_features = 3;
+    int out_features = 2;
+    Linear layer(in_features, out_features, true); // with bias
+
+    // 2. Set predetermined weights and bias for easy verification
+    Matrix weight(in_features, out_features);
+    weight(0,0) = 1.0; weight(0,1) = 2.0;
+    weight(1,0) = 0.5; weight(1,1) = -1.0;
+    weight(2,0) = -1.0; weight(2,1) = 1.0;
+
+    Matrix bias(1, out_features);
+    bias(0,0) = 0.5; bias(0,1) = -0.5;
+
+    layer.set_weight({weight, bias});
+
+    // 3. Create input data
+    Matrix input(2, in_features); // batch size of 2
+    input(0,0) = 1.0; input(0,1) = 2.0; input(0,2) = 3.0;
+    input(1,0) = 0.5; input(1,1) = -1.0; input(1,2) = 1.0;
+
+    // 4. Test forward pass
+    Matrix output = layer.forward(input);
+    
+    // Expected output calculation:
+    // For first sample: [1,2,3] * [1,2;0.5,-1;-1,1] + [0.5,-0.5] = [0.5,1.5]
+    // For second sample: [0.5,-1,1] * [1,2;0.5,-1;-1,1] + [0.5,-0.5] = [0.25,0.5]
+    
+    std::cout << "Forward pass test:" << std::endl;
+    std::cout << "Output shape: " << output.getRow() << "x" << output.getCol() << std::endl;
+    std::cout << "Output values:" << std::endl;
+    for(size_t i = 0; i < output.getRow(); i++) {
+        for(size_t j = 0; j < output.getCol(); j++) {
+            std::cout << output(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    // 5. Test backward pass
+    Matrix gradient(2, out_features); // Simulate gradient from next layer
+    gradient(0,0) = 1.0; gradient(0,1) = -1.0;
+    gradient(1,0) = 0.5; gradient(1,1) = 0.5;
+
+    auto [dx, param_grads] = layer.backward(gradient);
+
+    std::cout << "\nBackward pass test:" << std::endl;
+    std::cout << "Input gradient shape: " << dx.getRow() << "x" << dx.getCol() << std::endl;
+    std::cout << "Weight gradient shape: " << param_grads[0].getRow() << "x" << param_grads[0].getCol() << std::endl;
+    if (param_grads.size() > 1) {
+        std::cout << "Bias gradient shape: " << param_grads[1].getRow() << "x" << param_grads[1].getCol() << std::endl;
+    }
+
+    // 6. Verify gradients numerically using finite differences
+    const double epsilon = 1e-7;
+    // Test one weight element
+    Matrix original_weight = weight;
+    weight(0,0) += epsilon;
+    layer.set_weight({weight, bias});
+    Matrix output_plus = layer.forward(input);
+    
+    weight(0,0) -= 2 * epsilon;
+    layer.set_weight({weight, bias});
+    Matrix output_minus = layer.forward(input);
+    
+    double numerical_grad = ((output_plus - output_minus) / (2 * epsilon)).sum();
+    double analytical_grad = param_grads[0](0,0);
+    
+    std::cout << "\nGradient check:" << std::endl;
+    std::cout << "Numerical gradient: " << numerical_grad << std::endl;
+    std::cout << "Analytical gradient: " << analytical_grad << std::endl;
+    std::cout << "Difference: " << std::abs(numerical_grad - analytical_grad) << std::endl;
+}
+
 int main() {
     try {
         test_linear_initialization();
         verify_linear_layer_correctness();
+        test_linear_layer();
         std::cout << "All tests passed!" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Test failed: " << e.what() << std::endl;

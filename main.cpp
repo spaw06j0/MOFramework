@@ -44,7 +44,7 @@ std::pair<Matrix, Matrix> load_mnist_data(const std::string& images_path, const 
         unsigned char pixel;
         for (int j = 0; j < 784; j++) {
             images_file.read(reinterpret_cast<char*>(&pixel), 1);
-            images(i, j) = (static_cast<float>(pixel) / 255.0 - 0.5) * 2;  // Normalize to [0,1]
+            images(i, j) = static_cast<double>(pixel) / 255.0 - 0.5;  // Simple [0,1] normalization
         }
 
         // Read and one-hot encode label
@@ -111,7 +111,7 @@ float compute_accuracy(const Matrix& predictions, const Matrix& labels) {
         
         int true_idx = 0;
         for(int j = 0; j < 10; j++) {
-            if(labels(i,j) > 0.5) {
+            if(labels(i,j) == 1.0) {
                 true_idx = j;
                 break;
             }
@@ -188,20 +188,20 @@ int main() {
     test_compute_accuracy();
     // Create network layers
     std::vector<Layer*> layers;
-    layers.push_back(new Linear(784, 128, true, true));  // Input layer: 784 -> 128
-    layers.push_back(new ReLU());                  // ReLU activation
-    layers.push_back(new Linear(128, 10, true, true));   // Output layer: 128 -> 10 (for digits 0-9)
+    layers.push_back(new Linear(784, 128, true, true));    // Larger first hidden layer
     layers.push_back(new Sigmoid());
+    layers.push_back(new Linear(128, 10, true, true));     // Output layer
+    // layers.push_back(new Sigmoid());
     std::cout << "Successfully create layers" << std::endl;
     // Create network
     Network network(layers);
     std::cout << "Successfully create network" << std::endl;
     // Create optimizer
-    SGD optimizer(0.1, 0.95);
+    SGD optimizer(0.003, 0.9);
     // Adam optimizer(0.001, 0.9, 0.999, 1e-8);
     std::cout << "Successfully create optimizer" << std::endl;
     // Create loss function
-    MSE loss_fn;
+    CategoricalCrossentropy loss_fn;
     std::cout << "Successfully create loss function" << std::endl;
     // Load training data
     auto [train_images, train_labels] = load_mnist_data("/home/tri/jin/spaw06j0/MOFramework/data/train-images-idx3-ubyte", 
@@ -222,15 +222,15 @@ int main() {
     check_data(test_images, test_labels, "test");
     // Training parameters
     int epochs = 10;
-    int batch_size = 32;
+    int batch_size = 256;
     int num_batches = train_images.getRow() / batch_size;
     std::cout << "Start training" << std::endl;
     // Training loop
     for(int epoch = 0; epoch < epochs; epoch++) {
         float total_loss = 0.0;
-        Linear* first_layer = dynamic_cast<Linear*>(layers[0]);
-        std::cout << "Start of epoch " << epoch << " weights: " << std::endl;
-        first_layer->print_weight_stats();
+        // Linear* first_layer = dynamic_cast<Linear*>(layers[0]);
+        // std::cout << "Start of epoch " << epoch << " weights: " << std::endl;
+        // first_layer->print_weight_stats();
         for(int batch = 0; batch < num_batches; batch++) {
             // Get batch data
             Matrix batch_images = train_images.slice(batch * batch_size, (batch + 1) * batch_size);
@@ -249,7 +249,7 @@ int main() {
             // std::cout << "loss.getCol(): " << loss.getCol() << std::endl;
             // exit(0);
             // std::cout << "Successfully compute loss" << std::endl;
-            total_loss += loss.sum();
+            // total_loss += loss.sum();
             
             // Get initial gradient from loss function
             Matrix loss_gradient = loss_fn.backward();
@@ -266,14 +266,10 @@ int main() {
                          << ", Batch " << batch << "/" << num_batches << std::endl;
             }
         }
-        total_loss /= num_batches;
-        std::cout << "Epoch " << epoch + 1 << " completed. Loss: " << total_loss << std::endl;
+        // total_loss /= num_batches;
+        // std::cout << "Epoch " << epoch + 1 << " completed. Loss: " << total_loss << std::endl;
         // Evaluate on test set
         Matrix test_predictions = network.forward(test_images);
-        // std::cout << test_predictions.getRow() << std::endl;
-        // std::cout << test_predictions.getCol() << std::endl;
-        // std::cout << test_labels.getRow() << std::endl;
-        // std::cout << test_labels.getCol() << std::endl;
         float accuracy = compute_accuracy(test_predictions, test_labels);
         std::cout << "Epoch " << epoch + 1 << " completed. Test accuracy: " 
                   << accuracy * 100 << "%" << std::endl;

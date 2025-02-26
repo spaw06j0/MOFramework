@@ -5,8 +5,8 @@
 
 Matrix::Matrix() : row(0), col(0), data(nullptr) {}
 
-Matrix::Matrix(size_t row, size_t col)
-    : row(row), col(col),
+Matrix::Matrix(size_t r, size_t c)
+    : row(r), col(c),
       data(nullptr)
 {   
     size_t element = row * col;
@@ -19,8 +19,8 @@ Matrix::Matrix(size_t row, size_t col)
     }
 }
 template<typename Type>
-Matrix::Matrix(Type* ptr, size_t row, size_t col)
-    : row(row), col(col),
+Matrix::Matrix(Type* ptr, size_t r, size_t c)
+    : row(r), col(c),
       data(nullptr)
 {
     size_t element = row * col;
@@ -56,20 +56,20 @@ Matrix::~Matrix()
     data = nullptr;
 }
 
-double Matrix::operator() (size_t row, size_t col) const
+double Matrix::operator() (size_t r, size_t c) const
 {
-    if (row > this->row || col > this->col) {
+    if (r >= this->row || c >= this->col) {
         throw std::runtime_error("row or col out of bound");
     }
-    return data[row * this->col + col];
+    return data[r * this->col + c];
 }
 
-double &Matrix::operator() (size_t row, size_t col)
+double &Matrix::operator() (size_t r, size_t c)
 {
-    if (row > this->row || col > this->col) {
+    if (r >= this->row || c >= this->col) {
         throw std::runtime_error("row or col out of bound");
     }
-    return data[row * this->col + col];
+    return data[r * this->col + c];
 }
 
 bool Matrix::operator==(const Matrix &target) const
@@ -91,7 +91,6 @@ bool Matrix::operator==(const Matrix &target) const
 
 void Matrix::operator=(const Matrix &target)
 {
-    if (this == &target) return;
     if (data != nullptr) {
         delete[] data;
     }
@@ -268,16 +267,7 @@ Matrix Matrix::exp() const
 {
     Matrix temp(row, col);
     for (size_t i = 0; i < row * col; i++) {
-        auto x = std::exp(data[i]);
-        if (std::isnan(x)) {
-            temp.data[i] = 0.0;
-        }
-        else if (std::isinf(x)) {
-            temp.data[i] = 10^5;
-        }
-        else {
-            temp.data[i] = x;
-        }
+        temp.data[i] = std::exp(data[i]);
     }
     return temp;
 }
@@ -313,30 +303,30 @@ Matrix Matrix::T() const
 {
     Matrix temp(col, row);
     for (size_t i = 0; i < row * col; i++) {
-        size_t col_idx = i / row;
-        size_t row_idx = i % row;
-        temp.data[col_idx * row + row_idx] = data[i];
+        size_t col_idx = i / col;
+        size_t row_idx = i % col;
+        temp(row_idx, col_idx) = data[i];
     }
     return temp;
 }
 
-Matrix Matrix::fillwith(size_t row, size_t col, double num)
+Matrix Matrix::fillwith(size_t r, size_t c, double num)
 {
-    Matrix temp(row, col);
-    for (size_t i = 0; i < row * col; i++) {
+    Matrix temp(r, c);
+    for (size_t i = 0; i < r * c; i++) {
         temp.data[i] = num;
     }
     return temp;
 }
 
-Matrix Matrix::zeros(size_t row, size_t col)
+Matrix Matrix::zeros(size_t r, size_t c)
 {
-    return fillwith(row, col, 0.0);
+    return fillwith(r, c, 0.0);
 }
 
-Matrix Matrix::ones(size_t row, size_t col)
+Matrix Matrix::ones(size_t r, size_t c)
 {
-    return fillwith(row, col, 1.0);
+    return fillwith(r, c, 1.0);
 }
 
 Matrix Matrix::slice(size_t start_row, size_t end_row) const

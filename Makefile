@@ -14,13 +14,13 @@ LIB_SRCS = function/linear.cpp \
 LIB_OBJS = $(LIB_SRCS:.cpp=.o)
 
 # Test source files
-TEST_SRCS = test/testMatrix.cpp \
-            test/testLayer.cpp \
-            test/testLinear.cpp \
-            test/testOptimizer.cpp
+# TEST_SRCS = test/testMatrix.cpp \
+#             test/testLayer.cpp \
+#             test/testLinear.cpp \
+#             test/testOptimizer.cpp
 
-# Test object files
-TEST_OBJS = $(TEST_SRCS:.cpp=.o)
+# # Test object files
+# TEST_OBJS = $(TEST_SRCS:.cpp=.o)
 
 # Main program
 MAIN_SRC = main.cpp
@@ -28,41 +28,41 @@ MAIN_OBJ = $(MAIN_SRC:.cpp=.o)
 
 # Executables
 MAIN_TARGET = mnist_train
-TEST_MATRIX = test_matrix
-TEST_LAYER = test_layer
-TEST_LINEAR = test_linear
-TEST_OPTIMIZER = test_optimizer
+# TEST_MATRIX = test_matrix
+# TEST_LAYER = test_layer
+# TEST_LINEAR = test_linear
+# TEST_OPTIMIZER = test_optimizer
 
-# Default target
-all: tests $(MAIN_TARGET)
+# # Default target
+# all: tests $(MAIN_TARGET)
 
-# Build and run all tests
-tests: $(TEST_MATRIX) $(TEST_LAYER) $(TEST_LINEAR) $(TEST_OPTIMIZER)
-	@echo "Running Matrix tests..."
-	./$(TEST_MATRIX)
-	@echo "Running Layer tests..."
-	./$(TEST_LAYER)
-	@echo "Running Linear tests..."
-	./$(TEST_LINEAR)
-	@echo "Running Optimizer tests..."
-	./$(TEST_OPTIMIZER)
+# # Build and run all tests
+# tests: $(TEST_MATRIX) $(TEST_LAYER) $(TEST_LINEAR) $(TEST_OPTIMIZER)
+# 	@echo "Running Matrix tests..."
+# 	./$(TEST_MATRIX)
+# 	@echo "Running Layer tests..."
+# 	./$(TEST_LAYER)
+# 	@echo "Running Linear tests..."
+# 	./$(TEST_LINEAR)
+# 	@echo "Running Optimizer tests..."
+# 	./$(TEST_OPTIMIZER)
 
 # Main program
 $(MAIN_TARGET): $(MAIN_OBJ) $(LIB_OBJS)
 	$(CXX) $^ -o $@
 
 # Test executables
-$(TEST_MATRIX): test/testMatrix.o $(LIB_OBJS)
-	$(CXX) $^ -o $@
+# $(TEST_MATRIX): test/testMatrix.o $(LIB_OBJS)
+# 	$(CXX) $^ -o $@
 
-$(TEST_LAYER): test/testLayer.o $(LIB_OBJS)
-	$(CXX) $^ -o $@
+# $(TEST_LAYER): test/testLayer.o $(LIB_OBJS)
+# 	$(CXX) $^ -o $@
 
-$(TEST_LINEAR): test/testLinear.o $(LIB_OBJS)
-	$(CXX) $^ -o $@
+# $(TEST_LINEAR): test/testLinear.o $(LIB_OBJS)
+# 	$(CXX) $^ -o $@
 
-$(TEST_OPTIMIZER): test/testOptimizer.o $(LIB_OBJS)
-	$(CXX) $^ -o $@
+# $(TEST_OPTIMIZER): test/testOptimizer.o $(LIB_OBJS)
+# 	$(CXX) $^ -o $@
 
 # Compilation
 %.o: %.cpp

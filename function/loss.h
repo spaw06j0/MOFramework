@@ -12,7 +12,6 @@ public:
 
     virtual Matrix forward(const Matrix &prediction, const Matrix &ground_truth);
     virtual Matrix backward();
-
 protected:
     Matrix gradient;
     Matrix input;
