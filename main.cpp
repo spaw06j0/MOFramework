@@ -8,7 +8,7 @@
 #include <random>
 #include <fstream>
 #include <cassert>
-// Helper function to load MNIST data (you'll need to implement this)
+
 std::pair<Matrix, Matrix> load_mnist_data(const std::string& images_path, const std::string& labels_path, int num_samples) {
     // Open files
     std::ifstream images_file(images_path, std::ios::binary);

@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
+#include <pybind11/stl.h> 
 #include <iostream>
+#include <fstream>
 
 #include "matrix.h"
 #include "activation.h"
@@ -10,12 +12,99 @@
 #include "loss.h"
 #include "optimizer.h"
 
+std::pair<Matrix, Matrix> load_mnist_data(const std::string& images_path, const std::string& labels_path, int num_samples) {
+    // Open files
+    std::ifstream images_file(images_path, std::ios::binary);
+    std::ifstream labels_file(labels_path, std::ios::binary);
+    
+    if (!images_file.is_open() || !labels_file.is_open()) {
+        throw std::runtime_error("Cannot open MNIST data files");
+    }
+
+    // Read headers
+    uint32_t magic_number, n_images, n_rows, n_cols;
+    images_file.read(reinterpret_cast<char*>(&magic_number), sizeof(magic_number));
+    images_file.read(reinterpret_cast<char*>(&n_images), sizeof(n_images));
+    images_file.read(reinterpret_cast<char*>(&n_rows), sizeof(n_rows));
+    images_file.read(reinterpret_cast<char*>(&n_cols), sizeof(n_cols));
+
+    // Convert from big-endian to host byte order
+    magic_number = __builtin_bswap32(magic_number);
+    n_images = __builtin_bswap32(n_images);
+    n_rows = __builtin_bswap32(n_rows);
+    n_cols = __builtin_bswap32(n_cols);
+
+    // Skip label file header
+    labels_file.seekg(8);
+
+    // Prepare matrices
+    Matrix images(num_samples, 784);  // 28*28 = 784
+    Matrix labels(num_samples, 10);   // 10 classes for digits 0-9
+
+    // Read data
+    for (int i = 0; i < num_samples; i++) {
+        // Read image
+        unsigned char pixel;
+        for (int j = 0; j < 784; j++) {
+            images_file.read(reinterpret_cast<char*>(&pixel), 1);
+            images(i, j) = static_cast<double>(pixel) / 255.0 - 0.5;  // Simple [0,1] normalization
+        }
+
+        // Read and one-hot encode label
+        unsigned char label;
+        labels_file.read(reinterpret_cast<char*>(&label), 1);
+        for (int j = 0; j < 10; j++) {
+            labels(i, j) = (j == label) ? 1.0 : 0.0;
+        }
+    }
+
+    images_file.close();
+    labels_file.close();
+
+    return {images, labels}; // [batch, 784], [batch, 10]
+}
+
+float compute_accuracy(const Matrix& predictions, const Matrix& labels) {
+    int correct = 0;
+    int total = predictions.getRow();
+    
+    for(int i = 0; i < total; i++) {
+        int pred_idx = 0;
+        float max_val = predictions(i,0);
+        for(int j = 1; j < 10; j++) {
+            if(predictions(i,j) > max_val) {
+                max_val = predictions(i,j);
+                pred_idx = j;
+            }
+        }
+        
+        int true_idx = 0;
+        for(int j = 0; j < 10; j++) {
+            if(labels(i,j) == 1.0) {
+                true_idx = j;
+                break;
+            }
+        }
+        
+        if(pred_idx == true_idx) correct++;
+    }
+    
+    return float(correct) / total;
+}
+
+Matrix layer_forward(Linear &layer, const Matrix &input_tensor) {
+    // convert (batch, in_feat)
+    Matrix output = layer.forward(input_tensor);
+    return output;
+}
+
 namespace py = pybind11;
 PYBIND11_MODULE(pynet, m) {
     m.doc() = "python binding for easy network";
 
     py::class_<Matrix>(m, "Matrix", py::buffer_protocol())
         // matrix contain *data, row, col
+        // conversion to numpy arrays
         .def_buffer([](Matrix &m) -> py::buffer_info {
             return py::buffer_info(
                 m.getData(),
@@ -127,8 +216,8 @@ PYBIND11_MODULE(pynet, m) {
 
     py::class_<Linear, Layer>(m, "Linear")
         .def(py::init<int, int, bool, bool>())
-        .def("forward", &Linear::forward)
-        .def("__call__", &Linear::forward)
+        .def("forward", layer_forward)
+        .def("__call__", layer_forward)
         .def("set_weight", &Linear::set_weight)
         .def("get_weight", &Linear::get_weight)
         .def_property_readonly("weight", &Linear::getWeight)
@@ -143,7 +232,7 @@ PYBIND11_MODULE(pynet, m) {
         .def("__call__", &ReLU::forward);
 
     py::class_<Network>(m, "Network")
-        .def(py::init<std::vector<Layer*>>())
+        .def(py::init<std::vector<Layer*>>(), py::keep_alive<1, 2>())
         .def("__call__", [](Network &net, const Matrix &mat1) {
             return net.forward(mat1);
         })
@@ -169,6 +258,14 @@ PYBIND11_MODULE(pynet, m) {
     py::class_<SGD>(m, "SGD")
         .def(py::init<double, double>())
         .def("apply_gradient", &SGD::apply_gradient);
+    
+    m.def("load_mnist_data", &load_mnist_data,
+        py::arg("images_path"),
+        py::arg("labels_path"),
+        py::arg("num_samples"));
 
+    m.def("compute_accuracy", &compute_accuracy,
+        py::arg("predictions"),
+        py::arg("labels"));
 }
     
