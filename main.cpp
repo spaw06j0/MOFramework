@@ -3,6 +3,7 @@
 #include "function/activation.h"
 #include "function/optimizer.h"
 #include "function/loss.h"
+#include "function/matrix.h"
 #include <vector>
 #include <iostream>
 #include <random>
@@ -184,6 +185,9 @@ void test_compute_accuracy() {
 
 int main() {
     test_compute_accuracy();
+    // STANDARD, MKL ...
+    Matrix::setMulMode(Matrix::MulMode::MKL);
+    // std::cout << "Set Matrix Multiplication Mode to " << Matrix::mulMode << std::endl;
     // Create network layers
     std::vector<Layer*> layers;
     layers.push_back(new Linear(784, 128, true, true));    // Larger first hidden layer

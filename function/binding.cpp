@@ -92,12 +92,6 @@ float compute_accuracy(const Matrix& predictions, const Matrix& labels) {
     return float(correct) / total;
 }
 
-Matrix layer_forward(Linear &layer, const Matrix &input_tensor) {
-    // convert (batch, in_feat)
-    Matrix output = layer.forward(input_tensor);
-    return output;
-}
-
 namespace py = pybind11;
 PYBIND11_MODULE(pynet, m) {
     m.doc() = "python binding for easy network";
@@ -216,8 +210,8 @@ PYBIND11_MODULE(pynet, m) {
 
     py::class_<Linear, Layer>(m, "Linear")
         .def(py::init<int, int, bool, bool>())
-        .def("forward", layer_forward)
-        .def("__call__", layer_forward)
+        .def("forward", &Linear::forward)
+        .def("__call__", &Linear::forward)
         .def("set_weight", &Linear::set_weight)
         .def("get_weight", &Linear::get_weight)
         .def_property_readonly("weight", &Linear::getWeight)

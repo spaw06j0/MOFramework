@@ -4,10 +4,16 @@ PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags)
 PYBIND11_INCLUDE = $(shell python3 -m pybind11 --includes)
 
+# MKL configuration for Conda
+CONDA_PREFIX ?= $(shell conda info --env | grep -i '*' | awk '{print $$3}')
+MKL_INCLUDE = -I$(CONDA_PREFIX)/include
+# Simplified MKL linking
+MKL_LIB = -L$(CONDA_PREFIX)/lib -lmkl_rt -lm -ldl
+
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O2 -fPIC
-INCLUDES = -I./ $(PYBIND11_INCLUDE)
+CXXFLAGS = -std=c++17 -Wall -O2 -fPIC -m64 
+INCLUDES = -I./ $(PYBIND11_INCLUDE) $(MKL_INCLUDE)
 
 # Source directories
 SRCDIR = function
@@ -29,7 +35,7 @@ LIB_SRCS = $(SRCDIR)/linear.cpp \
 LIB_OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(LIB_SRCS))
 
 BINDING_SRC = $(SRCDIR)/binding.cpp
-BINDING_OBJ = $(OBJDIR)/binding.o
+# BINDING_OBJ = $(OBJDIR)/binding.o
 MODULE_NAME = pynet
 MODULE_FILE = $(MODULE_NAME)$(shell python3-config --extension-suffix)
 
@@ -51,19 +57,19 @@ $(OBJDIR):
 
 # Main program
 $(MAIN_TARGET): $(MAIN_OBJ) $(LIB_OBJS)
-	$(CXX) $^ -o $@ $(shell $(PYTHON_CONFIG) --ldflags)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(PYTHON_LDFLAGS) $(MKL_LIB)
 
 # Python module target 
 $(MODULE_FILE): $(BINDING_SRC) $(LIB_OBJS)
-	$(CXX) -shared -fPIC $(INCLUDES) $^ -o $@ $(PYTHON_LDFLAGS)
+	$(CXX) $(CXXFLAGS) -shared -fPIC $(INCLUDES) $^ -o $@ $(PYTHON_LDFLAGS) $(MKL_LIB)
 
 # Compilation rule for main.cpp
 $(OBJDIR)/main.o: $(MAIN_SRC) | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compilation rule for binding.cpp
-$(OBJDIR)/binding.o: $(BINDING_SRC) | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o
+# $(OBJDIR)/binding.o: $(BINDING_SRC) | $(OBJDIR)
+# 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o
 
 # Compilation rule for source files in function directory
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)

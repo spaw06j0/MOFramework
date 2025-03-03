@@ -2,6 +2,10 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <mkl.h>
+
+
+int Matrix::mulMode = Matrix::STANDARD;
 
 Matrix::Matrix() : row(0), col(0), data(nullptr) {}
 
@@ -340,7 +344,17 @@ Matrix Matrix::slice(size_t start_row, size_t end_row) const
     }
     return temp;
 }
-
+Matrix mat_multiply(const Matrix &mat1, const Matrix &mat2) {
+    // std::cout << "Matrix::mulMode: " << Matrix::mulMode << std::endl;
+    switch (Matrix::mulMode) {
+        case 0:
+            return multiply(mat1, mat2);
+        case 1:
+            return multiply_mkl(mat1, mat2);
+        default:
+            throw std::runtime_error("Invalid multiplication mode");
+    }
+}
 Matrix multiply(const Matrix &mat1, const Matrix &mat2) 
 {
     size_t row = mat1.getRow();
@@ -359,5 +373,31 @@ Matrix multiply(const Matrix &mat1, const Matrix &mat2)
             temp(i, j) = sum;
         }
     }
+    return temp;
+}
+
+Matrix multiply_mkl(const Matrix &mat1, const Matrix &mat2) {
+    size_t row = mat1.getRow();
+    size_t col = mat2.getCol();
+    size_t mid = mat1.getCol();
+    if (mid != mat2.getRow()) {
+        throw std::runtime_error("matrix dimension not match");
+    }
+    Matrix temp(row, col);
+    cblas_dgemm(
+        CblasRowMajor,
+        CblasNoTrans,
+        CblasNoTrans,
+        row,
+        col,
+        mid,
+        1.0,
+        mat1.data,
+        mid,
+        mat2.data,
+        col,
+        0.0,
+        temp.data,
+        col);
     return temp;
 }

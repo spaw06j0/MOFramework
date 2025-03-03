@@ -30,8 +30,8 @@ Matrix Linear::forward(const Matrix &input_tensor) {
         throw std::runtime_error("Input matrix column size does not match weight matrix row size\n");
     }
     // out = weight * input + bias
-    // TODO: multiply operation need to be optimized by accelerated operation (e.g. parallel programming)
-    //  matrix multiply operation
+    // TODO: mat_multiply operation need to be optimized by accelerated operation (e.g. parallel programming)
+    //  matrix mat_multiply operation
     // size_t row = input.getRow();
     // size_t col = this->weight.getCol();
     // size_t content = input.getCol();
@@ -45,7 +45,7 @@ Matrix Linear::forward(const Matrix &input_tensor) {
     //         output(i, j) = sum;
     //     }
     // }
-    Matrix output = multiply(input_tensor, this->weight);
+    Matrix output = mat_multiply(input_tensor, this->weight);
     if (this->useBias) {
         output = output + this->bias;
     }
@@ -59,16 +59,16 @@ std::pair<Matrix, std::vector<Matrix>> Linear::backward(Matrix &gradient) {
     // Since forward: z = xW, backward needs x^T
     // matrix multiply operation
     // weightGradient = input.T() * gradient;
-    this->weightGradient = multiply(this->input.T(), gradient);
+    this->weightGradient = mat_multiply(this->input.T(), gradient);
     // For input: dL/dx = dL/dz * W^T
     // Since forward: z = xW, backward needs W^T
     // Matrix dzdx = gradient * weight.T();
-    Matrix dzdx = multiply(gradient, this->weight.T());
+    Matrix dzdx = mat_multiply(gradient, this->weight.T());
     // For bias: dL/db = sum(dL/dz) across batch dimension
     // Since forward: z = xW + b, backward sums the gradients
     if (useBias) {
         Matrix ones = Matrix::fillwith(1, gradient.getRow(), 1.0);
-        this->biasGradient = multiply(ones, gradient);
+        this->biasGradient = mat_multiply(ones, gradient);
         return std::pair<Matrix, std::vector<Matrix>>(
             dzdx,
             {this->weightGradient, this->biasGradient}

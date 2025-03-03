@@ -95,8 +95,20 @@ public:
     size_t row;
     size_t col;
     double *data;
+
+public:
+    enum MulMode {
+        STANDARD = 0,
+        MKL
+    };
+    static void setMulMode(int mode) {
+        mulMode = mode;
+    }
+    static int mulMode;
 };
 
+Matrix mat_multiply(const Matrix &mat1, const Matrix &mat2);
 Matrix multiply(const Matrix &mat1, const Matrix &mat2);
+Matrix multiply_mkl(const Matrix &mat1, const Matrix &mat2);
 
 #endif
