@@ -4,7 +4,6 @@
 #include <cmath>
 #include <mkl.h>
 
-
 int Matrix::mulMode = Matrix::STANDARD;
 
 Matrix::Matrix() : row(0), col(0), data(nullptr) {}
@@ -351,6 +350,8 @@ Matrix mat_multiply(const Matrix &mat1, const Matrix &mat2) {
             return multiply(mat1, mat2);
         case 1:
             return multiply_mkl(mat1, mat2);
+        case 2:
+            return multiply_tile(mat1, mat2, 16);
         default:
             throw std::runtime_error("Invalid multiplication mode");
     }
@@ -399,5 +400,38 @@ Matrix multiply_mkl(const Matrix &mat1, const Matrix &mat2) {
         0.0,
         temp.data,
         col);
+    return temp;
+}
+
+Matrix multiply_tile(const Matrix &mat1, const Matrix &mat2, size_t tile_size) {
+    const size_t row1 = mat1.getRow();
+    const size_t col1 = mat1.getCol();
+    const size_t col2 = mat2.getCol();
+
+    if (col1 != mat2.getRow()) {
+        throw std::runtime_error("matrix dimension not match");
+    }
+
+    Matrix temp(row1, col2);
+    // Process each tile
+    for (size_t i = 0; i < row1; i += tile_size) {
+        size_t i_end = std::min(i + tile_size, row1);
+        for (size_t j = 0; j < col2; j += tile_size) {
+            size_t j_end = std::min(j + tile_size, col2);
+            for (size_t k = 0; k < col1; k += tile_size) {
+                size_t k_end = std::min(k + tile_size, col1);
+                // Process elements within the current tile
+                for (size_t ii = i; ii < i_end; ii++) {
+                    for (size_t jj = j; jj < j_end; jj++) {
+                        double sum = 0.0;
+                        for (size_t kk = k; kk < k_end; kk++) {
+                            sum += mat1(ii, kk) * mat2(kk, jj);
+                        }
+                        temp(ii, jj) += sum;
+                    }
+                }
+            }
+        }
+    }
     return temp;
 }

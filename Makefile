@@ -43,6 +43,11 @@ MODULE_FILE = $(MODULE_NAME)$(shell python3-config --extension-suffix)
 MAIN_SRC = main.cpp
 MAIN_OBJ = $(OBJDIR)/main.o
 
+# Performance test files
+TEST_PERF_SRC = test/testPerformance.cpp
+TEST_PERF_OBJ = $(OBJDIR)/testperformance.o
+TEST_PERF_TARGET = testperformance
+
 # Executables
 MAIN_TARGET = mnist_train
 
@@ -55,13 +60,17 @@ python_module: $(MODULE_FILE)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-# Main program
+# Main program target
 $(MAIN_TARGET): $(MAIN_OBJ) $(LIB_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(PYTHON_LDFLAGS) $(MKL_LIB)
 
 # Python module target 
 $(MODULE_FILE): $(BINDING_SRC) $(LIB_OBJS)
 	$(CXX) $(CXXFLAGS) -shared -fPIC $(INCLUDES) $^ -o $@ $(PYTHON_LDFLAGS) $(MKL_LIB)
+
+# Performance test program
+$(TEST_PERF_TARGET): $(TEST_PERF_OBJ) $(OBJDIR)/matrix.o
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(MKL_LIB)
 
 # Compilation rule for main.cpp
 $(OBJDIR)/main.o: $(MAIN_SRC) | $(OBJDIR)
@@ -71,10 +80,17 @@ $(OBJDIR)/main.o: $(MAIN_SRC) | $(OBJDIR)
 # $(OBJDIR)/binding.o: $(BINDING_SRC) | $(OBJDIR)
 # 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o
 
+# Compilation rule for performance test
+$(OBJDIR)/testperformance.o: $(TEST_PERF_SRC) | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
 # Compilation rule for source files in function directory
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
+test: $(TEST_PERF_TARGET)
+	./$(TEST_PERF_TARGET)
+    
 # Clean
 clean:
 	rm -rf $(OBJDIR) $(MAIN_TARGET) $(MODULE_FILE)

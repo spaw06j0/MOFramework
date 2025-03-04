@@ -99,7 +99,8 @@ public:
 public:
     enum MulMode {
         STANDARD = 0,
-        MKL
+        MKL,
+        TILE,
     };
     static void setMulMode(int mode) {
         mulMode = mode;
@@ -110,5 +111,6 @@ public:
 Matrix mat_multiply(const Matrix &mat1, const Matrix &mat2);
 Matrix multiply(const Matrix &mat1, const Matrix &mat2);
 Matrix multiply_mkl(const Matrix &mat1, const Matrix &mat2);
+Matrix multiply_tile(const Matrix &mat1, const Matrix &mat2, size_t tile_size);
 
 #endif

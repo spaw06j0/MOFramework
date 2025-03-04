@@ -5,3 +5,4 @@ data
 *.npz
 *.png
 mnist_train
+testperformance
