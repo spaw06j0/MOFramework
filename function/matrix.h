@@ -101,6 +101,9 @@ public:
         STANDARD = 0,
         MKL,
         TILE,
+        OPENMP,
+        THREAD,
+        CUDA
     };
     static void setMulMode(int mode) {
         mulMode = mode;
@@ -112,5 +115,8 @@ Matrix mat_multiply(const Matrix &mat1, const Matrix &mat2);
 Matrix multiply(const Matrix &mat1, const Matrix &mat2);
 Matrix multiply_mkl(const Matrix &mat1, const Matrix &mat2);
 Matrix multiply_tile(const Matrix &mat1, const Matrix &mat2, size_t tile_size);
+Matrix multiply_openmp(const Matrix &mat1, const Matrix &mat2);
+Matrix multiply_thread(const Matrix &mat1, const Matrix &mat2, int numThreads);
+Matrix multiply_cuda(const Matrix &mat1, const Matrix &mat2);
 
 #endif

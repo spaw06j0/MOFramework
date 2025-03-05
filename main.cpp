@@ -185,8 +185,8 @@ void test_compute_accuracy() {
 
 int main() {
     test_compute_accuracy();
-    // STANDARD, MKL, TILE...
-    Matrix::setMulMode(Matrix::MulMode::TILE);
+    // STANDARD, MKL, TILE, OPENMP, THREAD, CUDA
+    Matrix::setMulMode(Matrix::MulMode::CUDA);
     // std::cout << "Set Matrix Multiplication Mode to " << Matrix::mulMode << std::endl;
     // Create network layers
     std::vector<Layer*> layers;

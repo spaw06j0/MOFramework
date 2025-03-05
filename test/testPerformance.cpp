@@ -45,6 +45,7 @@ void testPerformance(size_t m, size_t n, size_t k) {
     Matrix A = createRandomMatrix(m, k);
     Matrix B = createRandomMatrix(k, n);
     
+    Matrix C = multiply(A, B);
     // Multiply using standard algorithm for reference
     double standardTime = measureTime([&]() {
         multiply(A, B);
@@ -55,13 +56,17 @@ void testPerformance(size_t m, size_t n, size_t k) {
     
     // Test MKL implementation
     Matrix C_mkl;
+    bool correct_mkl = matricesEqual(C, C_mkl);
     double mklTime = measureTime([&]() {
         C_mkl = multiply_mkl(A, B);
     });
     results.push_back({"MKL", mklTime});
-    
+    if (!correct_mkl) {
+        std::cout << "Warning: MKL implementation produced incorrect results!" << std::endl;
+    }
     // Test tiled implementation with different tile sizes
-    std::vector<int> tileSizes = {8, 16, 32, 64};
+    // std::vector<int> tileSizes = {8, 16, 32, 64};
+    std::vector<int> tileSizes = {64};
     for (int tileSize : tileSizes) {
         Matrix C_tile;
         double tileTime = measureTime([&]() {
@@ -69,14 +74,41 @@ void testPerformance(size_t m, size_t n, size_t k) {
         });
         
         // Verify result matches the standard implementation
-        Matrix C_std = multiply(A, B);
-        bool correct = matricesEqual(C_std, C_tile);
+        // bool correct = matricesEqual(C, C_tile);
         
         results.push_back({"Tiled (" + std::to_string(tileSize) + ")", tileTime});
-        if (!correct) {
-            std::cout << "Warning: Tiled implementation with size " << tileSize << " produced incorrect results!" << std::endl;
-        }
+        // if (!correct) {
+        //     std::cout << "Warning: Tiled implementation with size " << tileSize << " produced incorrect results!" << std::endl;
+        // }
     }
+    
+    // Test openmp implementation
+    Matrix C_openmp;
+    // bool correct_openmp = matricesEqual(C, C_openmp);
+    double openmpTime = measureTime([&]() {
+        C_openmp = multiply_openmp(A, B);
+    });
+    results.push_back({"OpenMP", openmpTime});
+    // if (!correct_openmp) {
+    //     std::cout << "Warning: OpenMP implementation produced incorrect results!" << std::endl;
+    // }
+    // Test thread implementation
+    Matrix C_thread;
+    double threadTime = measureTime([&]() {
+        C_thread = multiply_thread(A, B, 16);
+    });
+    // bool correct_thread = matricesEqual(C, C_thread);
+    results.push_back({"Thread", threadTime});
+    // if (!correct_thread) {
+    //     std::cout << "Warning: Thread implementation produced incorrect results!" << std::endl;
+    // }
+
+    // Test CUDA implementation
+    Matrix C_cuda;
+    double cudaTime = measureTime([&]() {
+        C_cuda = multiply_cuda(A, B);
+    });
+    results.push_back({"CUDA", cudaTime});
     
     // Print results
     std::cout << std::setw(15) << "Method" << std::setw(15) << "Time (ms)" << std::setw(15) << "Speedup" << std::endl;

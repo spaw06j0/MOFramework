@@ -10,17 +10,27 @@ MKL_INCLUDE = -I$(CONDA_PREFIX)/include
 # Simplified MKL linking
 MKL_LIB = -L$(CONDA_PREFIX)/lib -lmkl_rt -lm -ldl
 
+# CUDA configuration
+CUDA_PATH ?= /usr/local/cuda
+CUDA_INCLUDE = -I$(CUDA_PATH)/include
+CUDA_LIB = -L$(CUDA_PATH)/lib64 -lcudart -lcuda
+NVCC = $(CUDA_PATH)/bin/nvcc
+NVCCFLAGS = -std=c++14 -O2 -Xcompiler -fPIC
+
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O2 -fPIC -m64 
-INCLUDES = -I./ $(PYBIND11_INCLUDE) $(MKL_INCLUDE)
+CXXFLAGS = -std=c++17 -Wall -O2 -fPIC -m64 -fopenmp -pthread
+INCLUDES = -I./ $(PYBIND11_INCLUDE) $(MKL_INCLUDE) $(CUDA_INCLUDE)
+LDFLAGS = $(PYTHON_LDFLAGS) $(MKL_LIB) $(CUDA_LIB)
 
 # Source directories
 SRCDIR = function
 OBJDIR = obj
+CUDADIR = cuda
 
 # Create object directory if it doesn't exist
 $(shell mkdir -p $(OBJDIR))
+$(shell mkdir -p $(CUDADIR))
 
 # Source files
 LIB_SRCS = $(SRCDIR)/linear.cpp \
@@ -30,12 +40,14 @@ LIB_SRCS = $(SRCDIR)/linear.cpp \
            $(SRCDIR)/layer.cpp \
            $(SRCDIR)/loss.cpp \
            $(SRCDIR)/activation.cpp
+# CUDA source files
+CUDA_SRCS = $(CUDADIR)/matrix_cuda.cu
 
 # Object files with path adjustment
 LIB_OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(LIB_SRCS))
+CUDA_OBJS = $(OBJDIR)/matrix_cuda.o
 
 BINDING_SRC = $(SRCDIR)/binding.cpp
-# BINDING_OBJ = $(OBJDIR)/binding.o
 MODULE_NAME = pynet
 MODULE_FILE = $(MODULE_NAME)$(shell python3-config --extension-suffix)
 
@@ -61,24 +73,20 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 # Main program target
-$(MAIN_TARGET): $(MAIN_OBJ) $(LIB_OBJS)
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(PYTHON_LDFLAGS) $(MKL_LIB)
+$(MAIN_TARGET): $(MAIN_OBJ) $(LIB_OBJS) $(CUDA_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 # Python module target 
-$(MODULE_FILE): $(BINDING_SRC) $(LIB_OBJS)
-	$(CXX) $(CXXFLAGS) -shared -fPIC $(INCLUDES) $^ -o $@ $(PYTHON_LDFLAGS) $(MKL_LIB)
+$(MODULE_FILE): $(BINDING_SRC) $(LIB_OBJS) $(CUDA_OBJS)
+	$(CXX) $(CXXFLAGS) -shared -fPIC $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
 # Performance test program
-$(TEST_PERF_TARGET): $(TEST_PERF_OBJ) $(OBJDIR)/matrix.o
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(MKL_LIB)
+$(TEST_PERF_TARGET): $(TEST_PERF_OBJ) $(OBJDIR)/matrix.o $(CUDA_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 # Compilation rule for main.cpp
 $(OBJDIR)/main.o: $(MAIN_SRC) | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
-
-# Compilation rule for binding.cpp
-# $(OBJDIR)/binding.o: $(BINDING_SRC) | $(OBJDIR)
-# 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o
 
 # Compilation rule for performance test
 $(OBJDIR)/testperformance.o: $(TEST_PERF_SRC) | $(OBJDIR)
@@ -87,6 +95,10 @@ $(OBJDIR)/testperformance.o: $(TEST_PERF_SRC) | $(OBJDIR)
 # Compilation rule for source files in function directory
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Compilation rule for CUDA source files
+$(OBJDIR)/matrix_cuda.o: $(CUDA_SRCS) | $(OBJDIR)
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $< -o $@
 
 test: $(TEST_PERF_TARGET)
 	./$(TEST_PERF_TARGET)

@@ -56,7 +56,7 @@ for e in range(epoch):
     print(f"Epoch {e + 1} finished, Average Loss: {total_loss / num_batches}")
     test_predictions = network(test_data)
     accuracy = pynet.compute_accuracy(test_predictions, test_label)
-    print(f"Epoch {e + 1} finished, Test accuracy: {accuracy * 100}%")
+    print(f"Epoch {e + 1} finished, Test accuracy: {accuracy * 100:.2f}%")
 
 
 
